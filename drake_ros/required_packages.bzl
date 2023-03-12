@@ -1,4 +1,5 @@
 DRAKE_ROS_REQUIRED_PACKAGES = [
+    #"control_msgs",
     "geometry_msgs",
     "rclpy",
     "rclcpp",

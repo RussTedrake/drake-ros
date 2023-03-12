@@ -17,6 +17,7 @@ find_package(drake REQUIRED)
 find_package(pybind11 REQUIRED HINTS "${drake_DIR}/../pybind11" NO_DEFAULT_PATH)
 
 add_subdirectory(core)
+add_subdirectory(action)
 add_subdirectory(tf2)
 add_subdirectory(viz)
 # Python bindings
@@ -70,6 +71,7 @@ ament_environment_hooks("env-hooks/pydrake_pythonpath.sh.in")
 
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
+ament_export_dependencies(control_msgs)
 ament_export_dependencies(drake)
 ament_export_dependencies(eigen3_cmake_module)
 ament_export_dependencies(Eigen3)

@@ -1,6 +1,7 @@
 add_executable(iiwa_manipulator iiwa_manipulator.cpp)
 target_link_libraries(iiwa_manipulator
   drake::drake
+  drake_ros::drake_ros_action
   drake_ros::drake_ros_core
   drake_ros::drake_ros_viz
   gflags_shared
@@ -8,6 +9,11 @@ target_link_libraries(iiwa_manipulator
 
 install(
   PROGRAMS iiwa_manipulator.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS iiwa_joint_trajectory_client.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

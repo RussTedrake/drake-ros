@@ -1,4 +1,5 @@
 bazel-*
+.vscode
 
 # User-specified configuration
 /bazel_ros2_rules/user.bazelrc

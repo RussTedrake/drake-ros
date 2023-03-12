@@ -2,13 +2,16 @@
 #include <memory>
 #include <utility>
 
+#include <drake/common/drake_assert.h>
 #include <drake/common/eigen_types.h>
 #include <drake/examples/manipulation_station/manipulation_station.h>
+#include <drake/geometry/meshcat_visualizer.h>
 #include <drake/systems/analysis/simulator.h>
 #include <drake/systems/framework/diagram_builder.h>
 #include <drake/systems/primitives/adder.h>
 #include <drake/systems/primitives/constant_vector_source.h>
 #include <drake/systems/primitives/sine.h>
+#include <drake_ros/action/follow_joint_trajectory_server.h>
 #include <drake_ros/core/drake_ros.h>
 #include <drake_ros/core/ros_interface_system.h>
 #include <drake_ros/viz/rviz_visualizer.h>
@@ -39,28 +42,52 @@ int main(int argc, char** argv) {
   manipulation_station->SetupClutterClearingStation();
   manipulation_station->Finalize();
 
-  // Make the base joint swing sinusoidally.
-  auto constant_term = builder.AddSystem<ConstantVectorSource>(
-      drake::VectorX<double>::Zero(manipulation_station->num_iiwa_joints()));
+  ConstantVectorSource<double>* constant_term{nullptr};
+  if constexpr(false) {
+    // Make the base joint swing sinusoidally.
+    constant_term = builder.AddSystem<ConstantVectorSource>(
+        drake::VectorX<double>::Zero(manipulation_station->num_iiwa_joints()));
 
-  drake::VectorX<double> amplitudes =
-      drake::VectorX<double>::Zero(manipulation_station->num_iiwa_joints());
-  amplitudes[0] = M_PI / 4.;  // == 45 degrees
-  const drake::VectorX<double> frequencies = drake::VectorX<double>::Constant(
-      manipulation_station->num_iiwa_joints(), 1.);  // Hz
-  const drake::VectorX<double> phases =
-      drake::VectorX<double>::Zero(manipulation_station->num_iiwa_joints());
-  auto variable_term = builder.AddSystem<Sine>(amplitudes, frequencies, phases);
+    drake::VectorX<double> amplitudes =
+        drake::VectorX<double>::Zero(manipulation_station->num_iiwa_joints());
+    amplitudes[0] = M_PI / 4.;  // == 45 degrees
+    const drake::VectorX<double> frequencies = drake::VectorX<double>::Constant(
+        manipulation_station->num_iiwa_joints(), 1.);  // Hz
+    const drake::VectorX<double> phases =
+        drake::VectorX<double>::Zero(manipulation_station->num_iiwa_joints());
+    auto variable_term =
+        builder.AddSystem<Sine>(amplitudes, frequencies, phases);
 
-  auto joint_trajectory_generator =
-      builder.AddSystem<Adder>(2, manipulation_station->num_iiwa_joints());
+    auto joint_trajectory_generator =
+        builder.AddSystem<Adder>(2, manipulation_station->num_iiwa_joints());
 
-  builder.Connect(constant_term->get_output_port(),
-                  joint_trajectory_generator->get_input_port(0));
-  builder.Connect(variable_term->get_output_port(0),
-                  joint_trajectory_generator->get_input_port(1));
-  builder.Connect(joint_trajectory_generator->get_output_port(),
-                  manipulation_station->GetInputPort("iiwa_position"));
+    builder.Connect(constant_term->get_output_port(),
+                    joint_trajectory_generator->get_input_port(0));
+    builder.Connect(variable_term->get_output_port(0),
+                    joint_trajectory_generator->get_input_port(1));
+    builder.Connect(joint_trajectory_generator->get_output_port(),
+                    manipulation_station->GetInputPort("iiwa_position"));
+  } else {
+    const auto& plant = manipulation_station->get_multibody_plant();
+    std::vector<std::string> joint_names;
+    for (const auto& index :
+         plant.GetJointIndices(plant.GetModelInstanceByName("iiwa"))) {
+      if (plant.get_joint(index).num_positions() == 1) {
+        joint_names.push_back(plant.get_joint(index).name());
+      }
+    }
+
+    // Add a FollowJointTrajectory action server.
+    auto follow_traj =
+        builder.AddSystem<drake_ros_action::FollowJointTrajectoryServerSystem>(
+            "iiwa_joint_trajectory", joint_names,
+            ros_interface_system->get_ros_interface(), 0.1);
+    builder.Connect(follow_traj->get_output_port(),
+                    manipulation_station->GetInputPort("iiwa_position"));
+    builder.Connect(
+        manipulation_station->GetOutputPort("iiwa_position_measured"),
+        follow_traj->get_input_port());
+  }
 
   auto rviz_visualizer = builder.AddSystem<RvizVisualizer>(
       ros_interface_system->get_ros_interface());
@@ -68,6 +95,11 @@ int main(int argc, char** argv) {
   rviz_visualizer->RegisterMultibodyPlant(
       &manipulation_station->get_multibody_plant());
   rviz_visualizer->ComputeFrameHierarchy();
+
+  // Also add a meshcat visualizer
+  auto meshcat = std::make_shared<drake::geometry::Meshcat>();
+  drake::geometry::MeshcatVisualizer<double>::AddToBuilder(
+      &builder, manipulation_station->GetOutputPort("query_object"), meshcat);
 
   builder.Connect(manipulation_station->GetOutputPort("query_object"),
                   rviz_visualizer->get_graph_query_input_port());
@@ -85,19 +117,21 @@ int main(int argc, char** argv) {
   auto& manipulation_station_context = diagram->GetMutableSubsystemContext(
       *manipulation_station, &simulator_context);
 
-  auto& constant_term_context =
-      diagram->GetMutableSubsystemContext(*constant_term, &simulator_context);
-
   // Fix gripper joints' position.
   manipulation_station->GetInputPort("wsg_position")
       .FixValue(&manipulation_station_context, 0.);
 
-  // Use default positions for every joint but the base joint.
-  drake::systems::BasicVector<double>& constants =
-      constant_term->get_mutable_source_value(&constant_term_context);
-  constants.set_value(
-      manipulation_station->GetIiwaPosition(manipulation_station_context));
-  constants.get_mutable_value()[0] = -M_PI / 4.;
+  if (constant_term) {
+    auto& constant_term_context =
+        diagram->GetMutableSubsystemContext(*constant_term, &simulator_context);
+
+    // Use default positions for every joint but the base joint.
+    drake::systems::BasicVector<double>& constants =
+        constant_term->get_mutable_source_value(&constant_term_context);
+    constants.set_value(
+        manipulation_station->GetIiwaPosition(manipulation_station_context));
+    constants.get_mutable_value()[0] = -M_PI / 4.;
+  }
 
   // Step the simulator in 0.1s intervals
   constexpr double kStep{0.1};

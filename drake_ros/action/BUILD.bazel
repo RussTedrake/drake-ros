@@ -1,0 +1,34 @@
+load("@ros2//:ros_cc.bzl", "ros_cc_test")
+
+# Dependencies for both static and shared libraries that will not violate ODR.
+cc_library(
+    name = "odr_safe_deps",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//core:odr_safe_deps",
+        "@ros2//:control_msgs_cc",
+        "@ros2//:rclcpp_cc",
+        "@ros2//:tf2_ros_cc",
+    ],
+)
+
+# TODO(sloretz) more granular targets for static linking
+cc_library(
+    name = "action",
+    srcs = glob(
+        [
+            "*.cc",
+            "*.h",
+        ],
+    ),
+    hdrs = glob(
+        ["*.h"],
+    ),
+    include_prefix = "drake_ros/action",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":odr_safe_deps",
+        "//core",
+    ],
+)
+
