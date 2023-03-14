@@ -184,6 +184,7 @@ void FollowJointTrajectoryServerSystem::DoCalcNextUpdateTime(
         // Move goal_handle into the context.
         auto& goal_handle_value =
             abstract_state.get_mutable_value(goal_handle_index_);
+        // TODO(russt): call goal_handle->abort() if necessary.
         goal_handle_value.set_value(std::move(goal_handle));
         return drake::systems::EventStatus::Succeeded();
       };
