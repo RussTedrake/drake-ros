@@ -1,10 +1,12 @@
 pybind11_add_module(py_drake_ros_core SHARED
   "cc_py.cc"
+  "action/cc_pybind.cc"
   "core/cc_pybind.cc"
   "tf2/cc_pybind.cc"
   "viz/cc_pybind.cc"
 )
 target_link_libraries(py_drake_ros_core PRIVATE
+    drake_ros_action
     drake_ros_core
     drake_ros_tf2
     drake_ros_viz)

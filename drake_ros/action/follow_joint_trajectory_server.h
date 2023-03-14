@@ -32,7 +32,7 @@ class FollowJointTrajectoryServerSystem final
       const std::string& action_name,
       const std::vector<std::string>& joint_names,
       drake_ros_core::DrakeRos* ros,
-      double feedback_publish_period = 0.0);
+      double feedback_publish_period = 0.1);
 
   ~FollowJointTrajectoryServerSystem() override;
 

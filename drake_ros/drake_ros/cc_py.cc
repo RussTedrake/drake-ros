@@ -6,6 +6,7 @@
 namespace drake_ros {
 namespace drake_ros_py DRAKE_ROS_NO_EXPORT {
 
+void DefAction(py::module m);
 void DefCore(py::module m);
 void DefTf2(py::module m);
 void DefViz(py::module m);
@@ -25,6 +26,7 @@ PYBIND11_MODULE(_cc, m) {
   m.doc() = "Python bindings for drake_ros";
 
   DefTest(m.def_submodule("_test"));
+  DefAction(m.def_submodule("action"));
   DefCore(m.def_submodule("core"));
   DefTf2(m.def_submodule("tf2"));
   DefViz(m.def_submodule("viz"));

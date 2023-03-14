@@ -36,6 +36,11 @@ bazel run //examples/iiwa_manipulator:iiwa_manipulator
 bazel run //examples/iiwa_manipulator:iiwa_manipulator_py
 ```
 
+Then in one last terminal, run 
+```sh
+ros2 run drake_ros_examples iiwa_joint_trajectory_client.py
+```
+
 You should see the manipulation station with simple sinusoidal motion.
 
 **Note***: If you restart the simulation but not RViz, you should click RViz's
