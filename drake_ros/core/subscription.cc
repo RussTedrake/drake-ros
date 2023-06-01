@@ -5,7 +5,8 @@
 
 #include <rclcpp/version.h>
 
-namespace drake_ros_core {
+namespace drake_ros {
+namespace core {
 namespace internal {
 namespace {
 // Copied from rosbag2_transport rosbag2_get_subscription_options
@@ -22,11 +23,12 @@ Subscription::Subscription(
     const rclcpp::QoS& qos,
     std::function<void(std::shared_ptr<rclcpp::SerializedMessage>)> callback)
 #if RCLCPP_VERSION_GTE(18, 0, 0)
-    : rclcpp::SubscriptionBase(node_base, ts, topic_name,
-                               subscription_options(qos),
-                               /* event_callbacks */ {},
-                               /* use_default_callbacks */ true,
-                               /* is_serialized */ true),
+    : rclcpp::SubscriptionBase(
+          node_base, ts, topic_name, subscription_options(qos),
+          /* event_callbacks */ {},
+          /* use_default_callbacks */ true,
+          /* delivered_message_kind */
+          rclcpp::DeliveredMessageKind::SERIALIZED_MESSAGE),
 #else
     : rclcpp::SubscriptionBase(node_base, ts, topic_name,
                                subscription_options(qos),
@@ -80,4 +82,5 @@ void Subscription::return_serialized_message(
   message.reset();
 }
 }  // namespace internal
-}  // namespace drake_ros_core
+}  // namespace core
+}  // namespace drake_ros

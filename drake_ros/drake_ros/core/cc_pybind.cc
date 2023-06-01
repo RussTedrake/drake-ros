@@ -4,7 +4,9 @@
 #include <drake/systems/framework/leaf_system.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <rclcpp/qos.hpp>
 
+#include "drake_ros/core/clock_system.h"
 #include "drake_ros/core/drake_ros.h"
 #include "drake_ros/core/geometry_conversions.h"
 #include "drake_ros/core/geometry_conversions_pybind.h"
@@ -18,16 +20,19 @@
 namespace drake_ros {
 namespace drake_ros_py DRAKE_ROS_NO_EXPORT {
 
-using drake_ros_core::DrakeRos;
-using drake_ros_core::init;
-using drake_ros_core::RosInterfaceSystem;
-using drake_ros_core::RosPublisherSystem;
-using drake_ros_core::RosSubscriberSystem;
-using drake_ros_core::SerializerInterface;
-using drake_ros_core::shutdown;
+using drake_ros::core::ClockSystem;
+using drake_ros::core::DrakeRos;
+using drake_ros::core::init;
+using drake_ros::core::RosInterfaceSystem;
+using drake_ros::core::RosPublisherSystem;
+using drake_ros::core::RosSubscriberSystem;
+using drake_ros::core::SerializerInterface;
+using drake_ros::core::shutdown;
 
 using drake::systems::LeafSystem;
 using drake::systems::TriggerType;
+
+using py_rvp = pybind11::return_value_policy;
 
 // A (de)serialization interface implementation for Python ROS messages
 // that can be overriden from Python itself.
@@ -90,6 +95,33 @@ void DefCore(py::module m) {
   // C++ docstrings. Consider using mkdoc to keep
   // them in sync, like pydrake does.
   py::class_<DrakeRos>(m, "DrakeRos");
+
+  py::class_<ClockSystem, LeafSystem<double>>(m, "ClockSystem")
+      .def_static(
+          "AddToBuilder",
+          [](drake::systems::DiagramBuilder<double>* builder, DrakeRos* ros,
+             const std::string& topic_name, const QoS& qos,
+             const std::unordered_set<drake::systems::TriggerType>&
+                 pub_triggers,
+             double publish_period) {
+            auto [clock_system, pub_system] = ClockSystem::AddToBuilder(
+                builder, ros, topic_name, qos, pub_triggers, publish_period);
+
+            py::object py_builder = py::cast(builder, py_rvp::reference);
+            py::list result;
+            result.append(
+                py::cast(clock_system, py_rvp::reference_internal, py_builder));
+            result.append(
+                py::cast(pub_system, py_rvp::reference_internal, py_builder));
+            return result;
+          },
+          py::arg("builder"), py::arg("ros"), py::kw_only(),
+          py::arg("topic_name") = std::string{"/clock"},
+          py::arg("qos") = drake_ros::QoS(rclcpp::ClockQoS()),
+          py::arg("publish_triggers") =
+              std::unordered_set<drake::systems::TriggerType>{
+                  RosPublisherSystem::kDefaultTriggerTypes},
+          py::arg("publish_period") = 0.0);
 
   m.def(
       "init",
@@ -164,71 +196,71 @@ void DefCore(py::module m) {
 
   // Python bindings for geometry conversions.
   // Vector / Translation functions.
-  m.def("RosPointToVector3", &drake_ros_core::RosPointToVector3,
+  m.def("RosPointToVector3", &drake_ros::core::RosPointToVector3,
         py::arg("point"));
-  m.def("Vector3ToRosPoint", &drake_ros_core::Vector3ToRosPoint,
+  m.def("Vector3ToRosPoint", &drake_ros::core::Vector3ToRosPoint,
         py::arg("point"));
-  m.def("RosVector3ToVector3", &drake_ros_core::RosVector3ToVector3,
+  m.def("RosVector3ToVector3", &drake_ros::core::RosVector3ToVector3,
         py::arg("point"));
-  m.def("Vector3ToRosVector3", &drake_ros_core::Vector3ToRosVector3,
+  m.def("Vector3ToRosVector3", &drake_ros::core::Vector3ToRosVector3,
         py::arg("point"));
 
   // Orientation
-  m.def("RosQuaternionToQuaternion", &drake_ros_core::RosQuaternionToQuaternion,
-        py::arg("quat"));
-  m.def("QuaternionToRosQuaternion", &drake_ros_core::QuaternionToRosQuaternion,
-        py::arg("quat"));
+  m.def("RosQuaternionToQuaternion",
+        &drake_ros::core::RosQuaternionToQuaternion, py::arg("quat"));
+  m.def("QuaternionToRosQuaternion",
+        &drake_ros::core::QuaternionToRosQuaternion, py::arg("quat"));
   m.def("RosQuaternionToRotationMatrix",
-        &drake_ros_core::RosQuaternionToRotationMatrix, py::arg("quat"));
+        &drake_ros::core::RosQuaternionToRotationMatrix, py::arg("quat"));
   m.def("RotationMatrixToRosQuaternion",
-        &drake_ros_core::RotationMatrixToRosQuaternion, py::arg("rotation"));
+        &drake_ros::core::RotationMatrixToRosQuaternion, py::arg("rotation"));
 
   // Pose
-  m.def("RosPoseToRigidTransform", &drake_ros_core::RosPoseToRigidTransform,
+  m.def("RosPoseToRigidTransform", &drake_ros::core::RosPoseToRigidTransform,
         py::arg("pose"));
-  m.def("RigidTransformToRosPose", &drake_ros_core::RigidTransformToRosPose,
+  m.def("RigidTransformToRosPose", &drake_ros::core::RigidTransformToRosPose,
         py::arg("transform"));
   m.def("RosTransformToRigidTransform",
-        &drake_ros_core::RosTransformToRigidTransform, py::arg("transform"));
+        &drake_ros::core::RosTransformToRigidTransform, py::arg("transform"));
   m.def("RigidTransformToRosTransform",
-        &drake_ros_core::RigidTransformToRosTransform, py::arg("transform"));
-  m.def("RosPoseToIsometry3", &drake_ros_core::RosPoseToIsometry3,
+        &drake_ros::core::RigidTransformToRosTransform, py::arg("transform"));
+  m.def("RosPoseToIsometry3", &drake_ros::core::RosPoseToIsometry3,
         py::arg("pose"));
-  m.def("Isometry3ToRosPose", &drake_ros_core::Isometry3ToRosPose,
+  m.def("Isometry3ToRosPose", &drake_ros::core::Isometry3ToRosPose,
         py::arg("isometry"));
-  m.def("RosTransformToIsometry3", &drake_ros_core::RosTransformToIsometry3,
+  m.def("RosTransformToIsometry3", &drake_ros::core::RosTransformToIsometry3,
         py::arg("transform"));
-  m.def("Isometry3ToRosTransform", &drake_ros_core::Isometry3ToRosTransform,
+  m.def("Isometry3ToRosTransform", &drake_ros::core::Isometry3ToRosTransform,
         py::arg("isometry"));
 
   // Spatial Velocity
-  m.def("RosTwistToVector6", &drake_ros_core::RosTwistToVector6,
+  m.def("RosTwistToVector6", &drake_ros::core::RosTwistToVector6,
         py::arg("twist"));
-  m.def("Vector6ToRosTwist", &drake_ros_core::Vector6ToRosTwist,
+  m.def("Vector6ToRosTwist", &drake_ros::core::Vector6ToRosTwist,
         py::arg("vector"));
-  m.def("RosTwistToSpatialVelocity", &drake_ros_core::RosTwistToSpatialVelocity,
-        py::arg("twist"));
-  m.def("SpatialVelocityToRosTwist", &drake_ros_core::SpatialVelocityToRosTwist,
-        py::arg("velocity"));
+  m.def("RosTwistToSpatialVelocity",
+        &drake_ros::core::RosTwistToSpatialVelocity, py::arg("twist"));
+  m.def("SpatialVelocityToRosTwist",
+        &drake_ros::core::SpatialVelocityToRosTwist, py::arg("velocity"));
 
   // Spatial Acceleration
-  m.def("RosAccelToVector6", &drake_ros_core::RosAccelToVector6,
+  m.def("RosAccelToVector6", &drake_ros::core::RosAccelToVector6,
         py::arg("accel"));
-  m.def("Vector6ToRosAccel", &drake_ros_core::Vector6ToRosAccel,
+  m.def("Vector6ToRosAccel", &drake_ros::core::Vector6ToRosAccel,
         py::arg("vector"));
   m.def("RosAccelToSpatialAcceleration",
-        &drake_ros_core::RosAccelToSpatialAcceleration, py::arg("accel"));
+        &drake_ros::core::RosAccelToSpatialAcceleration, py::arg("accel"));
   m.def("SpatialAccelerationToRosAccel",
-        &drake_ros_core::SpatialAccelerationToRosAccel, py::arg("accel"));
+        &drake_ros::core::SpatialAccelerationToRosAccel, py::arg("accel"));
 
   // Spatial Force
-  m.def("RosWrenchToVector6", &drake_ros_core::RosWrenchToVector6,
+  m.def("RosWrenchToVector6", &drake_ros::core::RosWrenchToVector6,
         py::arg("wrench"));
-  m.def("Vector6ToRosWrench", &drake_ros_core::Vector6ToRosWrench,
+  m.def("Vector6ToRosWrench", &drake_ros::core::Vector6ToRosWrench,
         py::arg("vector"));
-  m.def("RosWrenchToSpatialForce", &drake_ros_core::RosWrenchToSpatialForce,
+  m.def("RosWrenchToSpatialForce", &drake_ros::core::RosWrenchToSpatialForce,
         py::arg("wrench"));
-  m.def("SpatialForceToRosWrench", &drake_ros_core::SpatialForceToRosWrench,
+  m.def("SpatialForceToRosWrench", &drake_ros::core::SpatialForceToRosWrench,
         py::arg("force"));
 }
 // clang-format off

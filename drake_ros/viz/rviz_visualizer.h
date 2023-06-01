@@ -6,19 +6,19 @@
 #include <drake/multibody/plant/multibody_plant.h>
 #include <drake/systems/framework/diagram.h>
 #include <drake_ros/core/drake_ros.h>
+#include <drake_ros/viz/defaults.h>
 
-namespace drake_ros_viz {
+namespace drake_ros {
+namespace viz {
 
 /// Set of parameters that configure an RvizVisualizer.
 struct RvizVisualizerParams {
   /// Publish triggers for scene markers and tf broadcasting.
   std::unordered_set<drake::systems::TriggerType> publish_triggers{
-      drake::systems::TriggerType::kForced,
-      drake::systems::TriggerType::kPeriodic};
+      kDefaultPublishTriggers};
 
   /// Period for periodic scene markers and tf broadcasting.
-  /// The default frequency is 20 Hz.
-  double publish_period{0.05};
+  double publish_period{kDefaultPublishPeriod};
 
   /// Whether to perform tf broadcasting or not.
   bool publish_tf{true};
@@ -41,7 +41,7 @@ class RvizVisualizer : public drake::systems::Diagram<double> {
     @param[in] ros interface to a live ROS node to publish from.
     @param[in] params optional rviz visualizer configurations.
     */
-  explicit RvizVisualizer(drake_ros_core::DrakeRos* ros,
+  explicit RvizVisualizer(drake_ros::core::DrakeRos* ros,
                           RvizVisualizerParams params = {});
 
   ~RvizVisualizer() override;
@@ -61,4 +61,8 @@ class RvizVisualizer : public drake::systems::Diagram<double> {
   std::unique_ptr<RvizVisualizerPrivate> impl_;
 };
 
-}  // namespace drake_ros_viz
+}  // namespace viz
+}  // namespace drake_ros
+
+// Legacy spelling for backwards compatibility.
+namespace drake_ros_viz = drake_ros::viz;

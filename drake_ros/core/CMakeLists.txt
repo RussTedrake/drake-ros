@@ -1,13 +1,5 @@
-
-find_package(eigen3_cmake_module REQUIRED)
-find_package(Eigen3)
-find_package(rclcpp REQUIRED)
-find_package(rosidl_runtime_c REQUIRED)
-find_package(rosidl_typesupport_cpp REQUIRED)
-find_package(geometry_msgs REQUIRED)
-
-
 set(HEADERS
+  "clock_system.h"
   "drake_ros.h"
   "geometry_conversions.h"
   "geometry_conversions_pybind.h"
@@ -27,6 +19,7 @@ foreach(hdr ${HEADERS})
 endforeach()
 
 add_library(drake_ros_core
+  clock_system.cc
   drake_ros.cc
   geometry_conversions.cc
   publisher.cc

@@ -12,6 +12,7 @@
 #include <drake/systems/primitives/constant_vector_source.h>
 #include <drake/systems/primitives/sine.h>
 #include <drake_ros/action/follow_joint_trajectory_server.h>
+#include <drake_ros/core/clock_system.h>
 #include <drake_ros/core/drake_ros.h>
 #include <drake_ros/core/ros_interface_system.h>
 #include <drake_ros/viz/rviz_visualizer.h>
@@ -20,9 +21,10 @@
 DEFINE_double(simulation_sec, std::numeric_limits<double>::infinity(),
               "How many seconds to run the simulation");
 
-using drake_ros_core::DrakeRos;
-using drake_ros_core::RosInterfaceSystem;
-using drake_ros_viz::RvizVisualizer;
+using drake_ros::core::ClockSystem;
+using drake_ros::core::DrakeRos;
+using drake_ros::core::RosInterfaceSystem;
+using drake_ros::viz::RvizVisualizer;
 
 using drake::examples::manipulation_station::ManipulationStation;
 using drake::systems::Adder;
@@ -34,9 +36,11 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   drake::systems::DiagramBuilder<double> builder;
 
-  drake_ros_core::init();
+  drake_ros::core::init();
   auto ros_interface_system = builder.AddSystem<RosInterfaceSystem>(
       std::make_unique<DrakeRos>("iiwa_manipulator_node"));
+  ClockSystem::AddToBuilder(&builder,
+                            ros_interface_system->get_ros_interface());
 
   auto manipulation_station = builder.AddSystem<ManipulationStation>();
   manipulation_station->SetupClutterClearingStation();
