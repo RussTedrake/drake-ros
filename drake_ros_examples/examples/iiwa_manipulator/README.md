@@ -36,12 +36,19 @@ bazel run //examples/iiwa_manipulator:iiwa_manipulator
 bazel run //examples/iiwa_manipulator:iiwa_manipulator_py
 ```
 
+Or
+```sh
+# Using ROS 2 Launch (C++)
+ros2 launch drake_ros_examples iiwa_manipulator_cc_launch.py
+# or (Python)
+ros2 launch drake_ros_examples iiwa_manipulator_py_launch.py
+```
+You should see the manipulation station with simple sinusoidal motion.
+
 Then in one last terminal, run 
 ```sh
 ros2 run drake_ros_examples iiwa_joint_trajectory_client.py
 ```
-
-You should see the manipulation station with simple sinusoidal motion.
 
 **Note***: If you restart the simulation but not RViz, you should click RViz's
 "Reset" button so that TF does not get tripped up on stale data.

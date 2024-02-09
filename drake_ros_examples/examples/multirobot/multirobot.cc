@@ -74,18 +74,20 @@ int main(int argc, char** argv) {
   const std::string model_name = "kuka_iiwa";
 
   // Create a 5x5 array of manipulators
-  size_t kNumRows = 5;
-  size_t kNumCols = 5;
+  int kNumRows = 5;
+  int kNumCols = 5;
   std::vector<std::vector<drake::multibody::ModelInstanceIndex>> models;
-  for (uint8_t xx = 0; xx < kNumRows; ++xx) {
+  for (int xx = 0; xx < kNumRows; ++xx) {
     std::vector<drake::multibody::ModelInstanceIndex> models_xx;
-    for (uint8_t yy = 0; yy < kNumCols; ++yy) {
+    for (int yy = 0; yy < kNumCols; ++yy) {
       // Load the model from the file and give it a name based on its X and Y
       // coordinates in the array
       std::stringstream model_instance_name;
       model_instance_name << model_name << xx << '_' << yy;
-      auto model_instance =
-          parser.AddModelFromFile(model_file_path, model_instance_name.str());
+      parser.SetAutoRenaming(true);
+      auto model_instance = parser.AddModels(model_file_path)[0];
+
+      plant.RenameModelInstance(model_instance, model_instance_name.str());
 
       // Weld the robot to the world so it doesn't fall through the floor
       auto& base_frame = plant.GetFrameByName("base", model_instance);
@@ -102,8 +104,8 @@ int main(int argc, char** argv) {
   plant.Finalize();
 
   // Set the control input of each robot to uncontrolled
-  for (size_t xx = 0; xx < kNumRows; ++xx) {
-    for (size_t yy = 0; yy < kNumCols; ++yy) {
+  for (int xx = 0; xx < kNumRows; ++xx) {
+    for (int yy = 0; yy < kNumCols; ++yy) {
       // Get the number of degrees of freedom for the robot
       auto num_dofs = plant.num_actuated_dofs(models[xx][yy]);
       // Create a vector with the same number of zeros
