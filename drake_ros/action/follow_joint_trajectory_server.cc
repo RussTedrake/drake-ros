@@ -154,8 +154,8 @@ void FollowJointTrajectoryServerSystem::DoCalcNextUpdateTime(
 
   // Create a unrestricted event and tie the handler to the corresponding
   // function.
-  drake::systems::UnrestrictedUpdateEvent<double>::UnrestrictedUpdateCallback
-      callback = [this, goal_handle{std::move(goal_handle)}](
+  auto callback = [this, goal_handle{std::move(goal_handle)}](
+                     const drake::systems::System<double>&,
                      const drake::systems::Context<double>& context,
                      const drake::systems::UnrestrictedUpdateEvent<double>&,
                      drake::systems::State<double>* state) {
