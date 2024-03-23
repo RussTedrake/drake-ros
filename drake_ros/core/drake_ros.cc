@@ -7,10 +7,11 @@
 #include <rclcpp/executors.hpp>
 #include <rclcpp/node.hpp>
 
-namespace drake_ros_core {
+namespace drake_ros {
+namespace core {
 struct DrakeRos::Impl {
   rclcpp::Context::SharedPtr context;
-  rclcpp::Node::UniquePtr node;
+  rclcpp::Node::SharedPtr node;
   rclcpp::executors::SingleThreadedExecutor::UniquePtr executor;
 };
 
@@ -59,4 +60,5 @@ void init(int argc, const char** argv) {
 
 bool shutdown() { return rclcpp::shutdown(); }
 
-}  // namespace drake_ros_core
+}  // namespace core
+}  // namespace drake_ros

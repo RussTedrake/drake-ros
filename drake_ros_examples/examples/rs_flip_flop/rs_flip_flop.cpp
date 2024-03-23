@@ -15,10 +15,10 @@
 DEFINE_double(simulation_sec, std::numeric_limits<double>::infinity(),
               "How many seconds to run the simulation");
 
-using drake_ros_core::DrakeRos;
-using drake_ros_core::RosInterfaceSystem;
-using drake_ros_core::RosPublisherSystem;
-using drake_ros_core::RosSubscriberSystem;
+using drake_ros::core::DrakeRos;
+using drake_ros::core::RosInterfaceSystem;
+using drake_ros::core::RosPublisherSystem;
+using drake_ros::core::RosSubscriberSystem;
 
 class NorGate : public drake::systems::LeafSystem<double> {
  public:
@@ -58,7 +58,8 @@ class Memory : public drake::systems::LeafSystem<double> {
                               {all_state_ticket()});
 
     DeclarePerStepEvent(drake::systems::UnrestrictedUpdateEvent<double>(
-        [this](const drake::systems::Context<double>& context,
+        [this](const drake::systems::System<double>&,
+               const drake::systems::Context<double>& context,
                const drake::systems::UnrestrictedUpdateEvent<double>&,
                drake::systems::State<double>* state) {
           // Copy input value to state
@@ -66,6 +67,7 @@ class Memory : public drake::systems::LeafSystem<double> {
               state->get_mutable_abstract_state();
           abstract_state.get_mutable_value(0).SetFrom(
               get_input_port().Eval<drake::AbstractValue>(context));
+          return drake::systems::EventStatus::Succeeded();
         }));
   }
 
@@ -95,7 +97,7 @@ int main(int argc, char** argv) {
 
   rclcpp::QoS qos{10};
 
-  drake_ros_core::init();
+  drake_ros::core::init();
   auto sys_ros_interface = builder.AddSystem<RosInterfaceSystem>(
       std::make_unique<DrakeRos>("rs_flip_flop_node"));
   auto sys_pub_Q =

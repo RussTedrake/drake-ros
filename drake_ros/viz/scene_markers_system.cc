@@ -22,11 +22,13 @@
 
 #include "drake_ros/core/geometry_conversions.h"
 #include "drake_ros/tf2/name_conventions.h"
+#include "drake_ros/viz/defaults.h"
 #include "drake_ros/viz/name_conventions.h"
 
-namespace drake_ros_viz {
+namespace drake_ros {
+namespace viz {
 
-using drake_ros_core::RigidTransformToRosPose;
+using drake_ros::core::RigidTransformToRosPose;
 
 namespace {
 
@@ -64,11 +66,11 @@ class SceneGeometryToMarkers : public drake::geometry::ShapeReifier {
     marker_array_ = marker_array;
 
     prototype_marker_.header.frame_id =
-        drake_ros_tf2::GetTfFrameName(inspector, plants, geometry_id);
+        drake_ros::tf2::GetTfFrameName(inspector, plants, geometry_id);
     prototype_marker_.ns = marker_namespace;
     prototype_marker_.id = marker_id;
     prototype_marker_.action = visualization_msgs::msg::Marker::MODIFY;
-    prototype_marker_.lifetime = rclcpp::Duration::from_nanoseconds(0);
+    prototype_marker_.lifetime = kMarkerLifetime;
     prototype_marker_.frame_locked = true;
 
     const drake::geometry::GeometryProperties* props =
@@ -393,4 +395,5 @@ SceneMarkersSystem::get_markers_output_port() const {
   return get_output_port(impl_->scene_markers_port_index);
 }
 
-}  // namespace drake_ros_viz
+}  // namespace viz
+}  // namespace drake_ros

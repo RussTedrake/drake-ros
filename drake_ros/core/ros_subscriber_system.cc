@@ -8,7 +8,8 @@
 #include "subscription.h"  // NOLINT(build/include)
 #include <drake/systems/framework/abstract_values.h>
 
-namespace drake_ros_core {
+namespace drake_ros {
+namespace core {
 namespace {
 // A synchronized queue of `MessageT` messages.
 template <typename MessageT>
@@ -87,20 +88,20 @@ void RosSubscriberSystem::DoCalcNextUpdateTime(
 
   // Create a unrestricted event and tie the handler to the corresponding
   // function.
-  drake::systems::UnrestrictedUpdateEvent<double>::UnrestrictedUpdateCallback
-      callback = [this, serialized_message{std::move(message)}](
-                     const drake::systems::Context<double>&,
-                     const drake::systems::UnrestrictedUpdateEvent<double>&,
-                     drake::systems::State<double>* state) {
-        // Deserialize the message and store it in the abstract state on the
-        // context
-        drake::systems::AbstractValues& abstract_state =
-            state->get_mutable_abstract_state();
-        auto& abstract_value =
-            abstract_state.get_mutable_value(impl_->message_state_index);
-        impl_->serializer->Deserialize(*serialized_message, &abstract_value);
-        return drake::systems::EventStatus::Succeeded();
-      };
+  auto callback = [this, serialized_message{std::move(message)}](
+                      const drake::systems::System<double>&,
+                      const drake::systems::Context<double>&,
+                      const drake::systems::UnrestrictedUpdateEvent<double>&,
+                      drake::systems::State<double>* state) {
+    // Deserialize the message and store it in the abstract state on the
+    // context
+    drake::systems::AbstractValues& abstract_state =
+        state->get_mutable_abstract_state();
+    auto& abstract_value =
+        abstract_state.get_mutable_value(impl_->message_state_index);
+    impl_->serializer->Deserialize(*serialized_message, &abstract_value);
+    return drake::systems::EventStatus::Succeeded();
+  };
 
   // Schedule an update event at the current time.
   *time = context.get_time();
@@ -110,4 +111,5 @@ void RosSubscriberSystem::DoCalcNextUpdateTime(
   uu_events.AddEvent(drake::systems::UnrestrictedUpdateEvent<double>(
       drake::systems::TriggerType::kTimed, callback));
 }
-}  // namespace drake_ros_core
+}  // namespace core
+}  // namespace drake_ros

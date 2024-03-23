@@ -9,6 +9,7 @@ cc_library(
         "//tf2:odr_safe_deps",
         "@ros2//:geometry_msgs_cc",
         "@ros2//:rclcpp_cc",
+        "@ros2//:tf2_eigen_cc",
         "@ros2//:visualization_msgs_cc",
     ],
 )
@@ -20,6 +21,7 @@ cc_library(
         [
             "*.cc",
             "*.h",
+            "heatmap_png.inc",
         ],
     ),
     hdrs = glob(

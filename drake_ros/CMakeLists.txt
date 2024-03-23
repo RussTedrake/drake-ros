@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(drake_ros)
 
-# Default to C++17
+# Default to C++20
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 20)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -15,6 +15,16 @@ find_package(ament_cmake_ros REQUIRED)
 find_package(drake REQUIRED)
 # Must use Drake's fork of Pybind11
 find_package(pybind11 REQUIRED HINTS "${drake_DIR}/../pybind11" NO_DEFAULT_PATH)
+
+find_package(eigen3_cmake_module REQUIRED)
+find_package(Eigen3)
+find_package(rclcpp REQUIRED)
+find_package(rosidl_runtime_c REQUIRED)
+find_package(rosidl_typesupport_cpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 add_subdirectory(core)
 add_subdirectory(action)
@@ -79,6 +89,7 @@ ament_export_dependencies(geometry_msgs)
 ament_export_dependencies(rclcpp)
 ament_export_dependencies(rosidl_runtime_c)
 ament_export_dependencies(rosidl_typesupport_cpp)
+ament_export_dependencies(tf2_eigen)
 ament_export_dependencies(tf2_ros)
 ament_export_dependencies(visualization_msgs)
 
